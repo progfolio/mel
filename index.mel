@@ -1,5 +1,5 @@
 ;; -*- lexical-binding: t; -*-
-(html
+(html [:lang "en"]
  (head
   (meta[:charset UTF-8])
   (link [:rel "stylesheet" :href "https://cdn.simplecss.org/simple.min.css"])
@@ -12,8 +12,8 @@
                          (p "Returns:")
                          (code ,(eval `(progn ,@body) t)))))
         `((h1 "MEL: Elisp HTML Templating")
-          (p [:align "center"] (img [:src "./logo.png"]))
-          (quote [:align "center"] "\"Short and sweet HTML.\"")
+          (p.center (img [:src "./logo.png" :alt "A honeycomb logo with the word 'mel' written in honey in the center."]))
+          (blockquote.center "\"Short and sweet HTML.\"")
           (h2 "Usage")
           (p "The " (code "mel")
              " function accepts any number of nodes and returns an HTML string.\n"
