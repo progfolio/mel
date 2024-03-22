@@ -11,7 +11,7 @@
       (cl-macrolet ((example (&rest body)
                       `'((code ,(format "%S" (macroexp-progn body)))
                          (p "Returns:")
-                         (code ,(eval `(progn ,@body) t)))))
+                         (pre ,(eval `(progn ,@body) t)))))
         `((h1 "MEL: Elisp HTML Templating")
           (p.center (img [:src "./logo.png" :alt "A honeycomb logo with the word 'mel' written in honey in the center."]))
           (blockquote.center "\"Short and sweet HTML.\"")
