@@ -123,7 +123,7 @@ If EVAL is non-nil, evaluate forms."
   (interactive)
   (let ((f (buffer-file-name)))
     (with-temp-buffer
-      (insert "<DOCTYPE! html>")
+      (insert "<!DOCTYPE html>")
       (let* ((dom (mel-read f 'eval))
              (html (apply #'mel dom)))
         (insert html)
