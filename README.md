@@ -67,15 +67,17 @@ Returns:
 
 A single `#` separator can be used to associate an ID with a tag.
 Note that the separator must be escaped with a `\` in elisp.
+The `@` separator is an alias for `#` which does not need to be escaped.
 
 ```emacs-lisp
-(mel '(h1\#id "heading"))
+(mel '(h1\#one "heading") '(h2@two "heading"))
 ```
 
 Returns:
 
 ```html
-<h1 id="id">heading</h1>
+<h1 id="one">heading</h1>
+<h1 id="two">heading</h1>
 ```
 
 Class and ID separators may be mixed.

@@ -40,9 +40,10 @@
           (h3 "IDs")
 
           (p "A single " (code "#") " separator can be used to associate an ID with a tag.\n"
-             "Note that the separator must be escaped with a " (code "\\") " in elisp.")
+             "Note that the separator must be escaped with a " (code "\\") " in elisp.\n"
+             "The " (code "@") " separator is an alias for "  (code "#") " which does not need to be escaped.")
 
-          ,@(example (mel 'h1\#id "heading"))
+          ,@(example (mel '(h1\#one "heading") '(h2@two "heading")))
 
           (h3 "Attributes")
 

@@ -51,7 +51,7 @@ Possible types are tag, id, and class."
                      (when (alist-get 'class tokens)
                        (push ?\s (alist-get 'class tokens)))
                      (setq target 'class))
-                    ((and (eq c ?#) (not escaped))
+                    ((and (memq c '(?# ?@)) (not escaped))
                      (and (alist-get 'id tokens) (error "More than one id in %s" symbol))
                      (setq target 'id))
                     (t (push c (alist-get target tokens))
@@ -136,10 +136,10 @@ If EVAL is non-nil, evaluate forms."
   (font-lock-add-keywords
    nil `((,(concat "([[:space:]]*\\("
                    (regexp-opt (mapcar #'car html-tag-help) nil)
-                   "\\)[.\\#[) \t\n\r]")
+                   "\\)[.\\#@[) \t\n\r]")
           1 font-lock-function-name-face)
          ("\\(\\.[[:alpha:]-]+\\)" 1 font-lock-type-face)
-         ("\\(\\#[[:alpha:]-]+\\)" 1 font-lock-keyword-face))))
+         ("\\(\\(#\\|@\\)[[:alpha:]-]+\\)" 1 font-lock-keyword-face))))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.mel\\'" . mel-mode))

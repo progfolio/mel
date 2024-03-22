@@ -49,10 +49,14 @@
       <code>#</code> separator can be used to associate an ID with a tag.
       Note that the separator must be escaped with a 
       <code>\</code> in elisp.
+      The 
+      <code>@</code> separator is an alias for 
+      <code>#</code> which does not need to be escaped.
     </p>
-    <code>(mel 'h1\#id &quot;heading&quot;)</code>
+    <code>(mel '(h1\#one &quot;heading&quot;) '(h2@two &quot;heading&quot;))</code>
     <p>Returns:</p>
-    <code>&lt;h1 id=&quot;id&quot;&gt;heading&lt;/h1&gt;
+    <code>&lt;h1 id=&quot;one&quot;&gt;heading&lt;/h1&gt;
+      &lt;h2 id=&quot;two&quot;&gt;heading&lt;/h2&gt;
     </code>
     <h3>Attributes</h3>
     <p>An optional attribute vector may be added as the second element of a node list.
