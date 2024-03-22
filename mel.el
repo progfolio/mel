@@ -101,8 +101,7 @@ If EVAL is non-nil, evaluate forms."
            finally return `(,tag ,tokens ,@(nreverse rest))))
 
 (defun mel (&rest specs)
-  "Return HTML string from SPECS.
-When MINIFIED is non-nil do not format string."
+  "Return HTML string from SPECS."
   (when (symbolp (car specs)) (setq specs (list specs)))
   (let ((prettyp (not mel-print-compact)))
     (with-temp-buffer
