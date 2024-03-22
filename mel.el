@@ -118,6 +118,17 @@ If EVAL is non-nil, evaluate forms."
         (indent-region (point-min) (point-max)))
       (buffer-substring-no-properties (point-min) (point-max)))))
 
+(defun mel-write-html ()
+  "Write current mel file to HTML."
+  (interactive)
+  (let ((f (buffer-file-name)))
+    (with-temp-buffer
+      (insert "<DOCTYPE! html>")
+      (let* ((dom (mel-read f 'eval))
+             (html (apply #'mel dom)))
+        (insert html)
+        (write-file (concat (file-name-sans-extension f) ".html") 'confirm)))))
+
 (defvar html-tag-help)
 (define-derived-mode mel-mode lisp-data-mode "mel-mode"
   "Major mode for editing .mel files."
