@@ -1,0 +1,65 @@
+;; -*- lexical-binding: t; -*-
+(html
+ (head
+  (meta[:charset UTF-8])
+  (link [:rel "stylesheet" :href "https://cdn.simplecss.org/simple.min.css"])
+  (title "MEL: Elisp HTML Templating"))
+ (body
+  ,@(progn
+      (require 'cl-lib)
+      (cl-macrolet ((example (&rest body)
+                      `'((code ,(format "%S" (macroexp-progn body)))
+                         (p "Returns:")
+                         (code ,(eval `(progn ,@body) t)))))
+        `((h1 "MEL: Elisp HTML Templating")
+          (p [:align "center"] (img [:src "./logo.png"]))
+          (quote [:align "center"] "\"Short and sweet HTML.\"")
+          (h2 "Usage")
+          (p "The " (code "mel")
+             " function accepts any number of nodes and returns an HTML string.\n"
+             "Each node is a list of the following form:\n")
+
+          (pre "(TAG [attribute val...] CHILDREN...)")
+
+          (h3 "Tags")
+          (p (code "Tag") " should be a symbol staring with the name of an HTML tag.")
+
+          ,@(example (mel '(h1 "heading")))
+
+          (h3 "Classes")
+          (p "The " (code ".") " separator can be used in a tag symbol name to indicate a class.")
+          ,@(example (mel '(h1.class "heading")))
+
+          (p "It may be used multiple times.")
+
+          ,@(example (mel '(h1.one.two "heading")))
+
+          (p "As a special case, if a tag symbol begins with a " (code ".") ", a div tag is implied.")
+          ,@(example (mel '(.class "content")))
+
+          (h3 "IDs")
+
+          (p "A single " (code "#") " separator can be used to associate an ID with a tag.\n"
+             "Note that the separator must be escaped with a " (code "\\") " in elisp.")
+
+          ,@(example (mel 'h1\#id "heading"))
+
+          (h3 "Attributes")
+
+          (p "An optional attribute vector may be added as the second element of a node list.\n"
+             "Each attribute must be a symbol (optionally a keyword) followed by its value.\n"
+             "The value will be coerced to its string representation.")
+
+          ,@(example (mel '(h1 [:one "true" :two false])))
+
+          (h3 "Children")
+
+          (p "Any elements of a node specified after the tag and optional attribute vector are the node's children. They may be either strings or nodes.")
+
+          ,@(example (mel '(p "example " (span "text"))))
+
+          (h2 "The MEL file format")
+
+          (p "A MEL file consists of a body which contains one or more nodes as top-level sexps.\n"
+             "The forms are implicitly backquoted, so elisp may be used within each node via the " (code ",") " and " (code ",@") " "
+             (a [:href "https://www.gnu.org/software/emacs/manual/html_node/elisp/Backquote.html"] "backquote constructs") "."))))))

@@ -1,0 +1,81 @@
+<DOCTYPE! html><html>
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="stylesheet" href="https://cdn.simplecss.org/simple.min.css" />
+    <title>MEL: Elisp HTML Templating</title>
+  </head>
+  <body>
+    <h1>MEL: Elisp HTML Templating</h1>
+    <p align="center">
+      <img src="./logo.png" />
+    </p>
+    <quote align="center">&quot;Short and sweet HTML.&quot;</quote>
+    <h2>Usage</h2>
+    <p>The 
+      <code>mel</code> function accepts any number of nodes and returns an HTML string.
+      Each node is a list of the following form:
+    </p>
+    <pre>(TAG [attribute val...] CHILDREN...)</pre>
+    <h3>Tags</h3>
+    <p>
+      <code>Tag</code> should be a symbol staring with the name of an HTML tag.
+    </p>
+    <code>(mel '(h1 &quot;heading&quot;))</code>
+    <p>Returns:</p>
+    <code>&lt;h1&gt;heading&lt;/h1&gt;
+    </code>
+    <h3>Classes</h3>
+    <p>The 
+      <code>.</code> separator can be used in a tag symbol name to indicate a class.
+    </p>
+    <code>(mel '(h1.class &quot;heading&quot;))</code>
+    <p>Returns:</p>
+    <code>&lt;h1 class=&quot;class&quot;&gt;heading&lt;/h1&gt;
+    </code>
+    <p>It may be used multiple times.</p>
+    <code>(mel '(h1.one.two &quot;heading&quot;))</code>
+    <p>Returns:</p>
+    <code>&lt;h1 class=&quot;one two&quot;&gt;heading&lt;/h1&gt;
+    </code>
+    <p>As a special case, if a tag symbol begins with a 
+      <code>.</code>, a div tag is implied.
+    </p>
+    <code>(mel '(\.class &quot;content&quot;))</code>
+    <p>Returns:</p>
+    <code>&lt;div class=&quot;class&quot;&gt;content&lt;/div&gt;
+    </code>
+    <h3>IDs</h3>
+    <p>A single 
+      <code>#</code> separator can be used to associate an ID with a tag.
+      Note that the separator must be escaped with a 
+      <code>\</code> in elisp.
+    </p>
+    <code>(mel 'h1\#id &quot;heading&quot;)</code>
+    <p>Returns:</p>
+    <code>&lt;h1 id=&quot;id&quot;&gt;heading&lt;/h1&gt;
+    </code>
+    <h3>Attributes</h3>
+    <p>An optional attribute vector may be added as the second element of a node list.
+      Each attribute must be a symbol (optionally a keyword) followed by its value.
+      The value will be coerced to its string representation.</p>
+    <code>(mel '(h1 [:one &quot;true&quot; :two false]))</code>
+    <p>Returns:</p>
+    <code>&lt;h1 one=&quot;true&quot; two=&quot;false&quot; /&gt;
+    </code>
+    <h3>Children</h3>
+    <p>Any elements of a node specified after the tag and optional attribute vector are the node's children. They may be either strings or nodes.</p>
+    <code>(mel '(p &quot;example &quot; (span &quot;text&quot;)))</code>
+    <p>Returns:</p>
+    <code>&lt;p&gt;example 
+      &lt;span&gt;text&lt;/span&gt;
+      &lt;/p&gt;
+    </code>
+    <h2>The MEL file format</h2>
+    <p>A MEL file consists of a body which contains one or more nodes as top-level sexps.
+      The forms are implicitly backquoted, so elisp may be used within each node via the 
+      <code>,</code> and 
+      <code>,@</code> 
+      <a href="https://www.gnu.org/software/emacs/manual/html_node/elisp/Backquote.html">backquote constructs</a>.
+    </p>
+  </body>
+</html>
