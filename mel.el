@@ -3,7 +3,11 @@
 ;; Copyright (C) 2024  Nicholas Vollmer
 
 ;; Author: Nicholas Vollmer <nv@parenthetic.dev>
+;; URL: https://github.com/progfolio/mel
 ;; Keywords: convenience, data, hypermedia
+;; Created: March 15, 2024
+;; Package-Requires: ((emacs "28.1"))
+;; Version: 0.0.0
 
 ;; This program is free software; you can redistribute it and/or modify
 ;; it under the terms of the GNU General Public License as published by
@@ -20,7 +24,7 @@
 
 ;;; Commentary:
 
-;;
+;; Mel provides basic elisp HTML templating
 
 ;;; Code:
 (require 'cl-lib)
