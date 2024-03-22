@@ -139,7 +139,7 @@ If EVAL is non-nil, evaluate forms."
                    "\\)[.\\#@[) \t\n\r]")
           1 font-lock-function-name-face)
          ("\\(\\.[[:alpha:]-]+\\)" 1 font-lock-type-face)
-         ("\\(\\(#\\|@\\)[[:alpha:]-]+\\)" 1 font-lock-keyword-face))))
+         ("[^,]\\(\\(#\\|@\\)[[:alpha:]-]+\\)" 1 font-lock-keyword-face))))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.mel\\'" . mel-mode))
