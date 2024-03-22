@@ -1,0 +1,3 @@
+#Enable syntax highlighting on github 
+
+*.mel linguist-language=elisp
