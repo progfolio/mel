@@ -1,7 +1,0 @@
-#+begin_src emacs-lisp :lexical t :results  raw :exports both
-(concat "html: " (mel '(img [:src "./logo.svg" :alt "A honeycomb logo."])))
-#+end_src
-
-#+RESULTS:
-html: <img src="./logo.svg" alt="A honeycomb logo." />
-
