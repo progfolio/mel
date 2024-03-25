@@ -130,7 +130,7 @@ If EVAL is non-nil, evaluate forms."
         (write-file (concat (file-name-sans-extension f) ".html") 'confirm)))))
 
 (defvar html-tag-help)
-(define-derived-mode mel-mode lisp-data-mode "mel-mode"
+(define-derived-mode mel-mode emacs-lisp-mode "mel-mode"
   "Major mode for editing .mel files."
   (require 'sgml-mode)
   (font-lock-add-keywords
