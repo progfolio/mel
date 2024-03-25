@@ -143,6 +143,8 @@ If EVAL is non-nil, evaluate forms."
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.mel\\'" . mel-mode))
+;;;###autoload
+(add-to-list 'auto-mode-alist '("\\.htmel\\'" . mel-mode))
 
 (provide 'mel)
 ;;; mel.el ends here
