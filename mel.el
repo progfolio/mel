@@ -32,8 +32,67 @@
 
 (defgroup mel nil "HTML Elisp Templating." :group 'programming :prefix "mel-")
 (defcustom mel-print-compact nil "When non-nil minimize HTML ouput." :type 'boolean)
+(defcustom mel-pandoc-executable (executable-find "pandoc")
+  "Path to the pandoc executable." :type 'string)
+(defcustom mel-parser-extensions '((".htmel" . mel--template)
+                                   (".mel" . mel--partial)
+                                   (".txt" . buffer-string)
+                                   (".org" . mel--org)
+                                   (".md" . mel--markdown))
+  "When non-nil minimize HTML ouput."
+  :type '(repeat (choice (string :tag "file extension") (function :tag "parser"))))
 
 (defvar mel-data nil)
+
+(defun mel-get (key &optional noerror)
+  "Return KEY's `mel-data' value.
+If NOERROR is non-nil, return an empty string when key is not found."
+  (or (alist-get key mel-data nil)
+      (or (and noerror "") (error "No mel-data value for %S" key))))
+
+(defun mel--template ()
+  "Eval `current-buffer' as elisp. Return value of last expression."
+  (eval (read (format "(progn %s)" (buffer-substring-no-properties (point-min) (point-max))))
+        t))
+
+(defun mel--partial ()
+  "Parser for file with multiple top-level specs."
+  (let ((forms nil))
+    (condition-case err
+        (while t (push (read (current-buffer)) forms))
+      ((end-of-file) nil)
+      ((error) (signal (car err) (cdr err))))
+    (mapcar (lambda (form) (eval `(backquote ,form))) (nreverse forms))))
+
+(defun mel--pandoc (format)
+  "Convert `current-buffer' from FORMAT to HTML via pandoc."
+  (if (zerop (call-process-region (point-min) (point-max) mel-pandoc-executable
+                                  'delete t nil "-f" format))
+      (list :raw (buffer-substring-no-properties (point-min) (point-max)))
+    (error "Unable to parse buffer: %s" (buffer-string))))
+
+(defun mel--markdown ()
+  "Convert `current-buffer' from Markdown to HTML via pandoc."
+  (mel--pandoc "markdown"))
+
+(defun mel-md (&rest strings)
+  "Return HTML from markdown STRINGS."
+  (with-temp-buffer
+    (insert (string-join strings "\n"))
+    (mel--markdown)))
+
+(defun mel--org-pandoc ()
+  "Convert `current-buffer' from Org to HTML via pandoc."
+  (mel--pandoc "markdown"))
+
+(declare-function org-html-convert-region-to-html "ox-html")
+(defun mel--org ()
+  "Convert `current-buffer' from Org to HTML."
+  (require 'ox-html)
+  (set-mark (point-min))
+  (goto-char (point-max))
+  (org-html-convert-region-to-html)
+  (list :raw (buffer-substring-no-properties (point-min) (point-max))))
 
 (defun mel--chars-to-string (chars)
   "Return string from CHARS."
@@ -72,61 +131,79 @@ Common keys have their values appended."
            collect (cons (if (string-prefix-p ":" key) (intern (substring key 1)) k)
                          (if v (format "%s" v) ""))))
 
-(defun mel-read (filename &optional eval)
-  "Read forms in FILENAME.
-If EVAL is non-nil, evaluate forms."
+(defun mel-parser (filename)
+  "Dispatch to parser in `mel-parser-extensions' via FILENAME.
+If no parser matches, `buffer-string' is used."
+  (funcall (alist-get (file-name-extension filename) mel-parser-extensions
+                      #'buffer-string nil (lambda (k v) (string-match-p v k)))))
+
+(defun mel-load (filename &optional parser)
+  "Eval forms in FILENAME via PARSER.
+PARSER defaults to evaluate as elisp and return value of last form."
   (with-temp-buffer
     (insert-file-contents filename)
     (goto-char (point-min))
-    (let ((forms nil))
-      (condition-case err
-          (while t (push (read (current-buffer)) forms))
-        ((end-of-file) nil)
-        ((error) (signal (car err) (cdr err))))
-      (if eval
-          (mapcar (lambda (form) (eval `(backquote ,form)))
-                  (nreverse forms))
-        (nreverse forms)))))
+    (if parser (funcall parser) (mel-parser filename))))
 
 (defun mel-node (spec)
-  "Return a DOM fragment from mel SPEC."
-  (cl-loop with tokens = (mel--parse-symbol (pop spec))
-           with tag = (intern (alist-get 'tag tokens "div"))
-           with rest = nil
-           initially (setf (alist-get 'tag tokens nil t) nil)
-           for el in spec collect
-           (if (vectorp el)
-               (setq tokens
-                     (condition-case err
-                         (mel--merge-attributes (mel--parse-attributes el) tokens)
-                       ((duplicate-id) (error "Duplicate ID %s: %s" spec (cdr err)))))
-             (push (if (consp el) (mel-node el) el) rest))
-           finally return `(,tag ,tokens ,@(nreverse rest))))
+  "Return a list of nodes from mel SPEC."
+  (if (stringp spec) (list spec)
+    (cl-loop with tokens = (mel--parse-symbol (pop spec))
+             with tag = (intern (alist-get 'tag tokens "div"))
+             with rest = nil
+             initially (setf (alist-get 'tag tokens nil t) nil)
+             for el in spec collect
+             (if (vectorp el)
+                 (setq tokens
+                       (condition-case err
+                           (mel--merge-attributes (mel--parse-attributes el) tokens)
+                         ((duplicate-id) (error "Duplicate ID %s: %s" spec (cdr err)))))
+               (setq rest
+                     (if (consp el) (append (mel-node el) rest)
+                       (cons el rest))))
+             finally return
+             (list `(,tag ,tokens ,@(nreverse rest))))))
+
+(defun mel-nodelist (&rest specs)
+  "Return List of nodes from SPECS."
+  (apply #'append (mapcar #'mel-node specs)))
+
+(defun mel--dom-print (fn &rest args)
+  "Advice for `dom-print' FN to handle ARGS."
+  (let* ((node (car args))
+         (tag (car-safe node)))
+    (cond ((stringp node) (insert (url-insert-entities-in-string node)))
+          ((eq tag :raw) (apply #'insert (nthcdr 2 node)))
+          ((eq tag :comment)
+           (insert (with-current-buffer (get-buffer-create " *mel-comment*")
+                     (erase-buffer)
+                     (unless (derived-mode-p 'html-mode) (delay-mode-hooks (html-mode)))
+                     (apply #'insert (nthcdr 2 node))
+                     (comment-region (point-min) (point-max))
+                     (buffer-substring-no-properties (point-min) (point-max)))))
+          (t (funcall fn node (not mel-print-compact))))))
+
+(defun mel--insert-node (node)
+  "Insert NODE."
+  (advice-add #'dom-print :around #'mel--dom-print)
+  (unwind-protect (dom-print node (not mel-print-compact))
+    (advice-remove #'dom-print #'mel--dom-print)))
 
 (defun mel (&rest specs)
   "Return HTML string from SPECS."
-  (when (symbolp (car specs)) (setq specs (list specs)))
-  (let ((prettyp (not mel-print-compact)))
-    (with-temp-buffer
-      (mapc (lambda (fragment)
-              (dom-print (mel-node fragment) prettyp)
-              (when prettyp (insert "\n")))
-            specs)
-      (when prettyp
-        (delay-mode-hooks (html-mode))
-        (indent-region (point-min) (point-max)))
-      (buffer-substring-no-properties (point-min) (point-max)))))
+  (with-current-buffer (get-buffer-create " *mel-html*")
+    (erase-buffer)
+    (unless (derived-mode-p 'html-mode) (delay-mode-hooks (html-mode)))
+    (mapc #'mel--insert-node (apply #'mel-nodelist specs))
+    (unless mel-print-compact (indent-region (point-min) (point-max)))
+    (buffer-substring-no-properties (point-min) (point-max))))
 
-(defun mel-write-html ()
-  "Write current mel file to HTML."
-  (interactive)
-  (let ((f (buffer-file-name)))
-    (with-temp-buffer
-      (insert "<!DOCTYPE html>")
-      (let* ((dom (mel-read f 'eval))
-             (html (apply #'mel dom)))
-        (insert html)
-        (write-file (concat (file-name-sans-extension f) ".html") 'confirm)))))
+(defun mel-write-html (file)
+  "Write current mel FILE to HTML."
+  (interactive "fmel file:")
+  (with-temp-buffer
+    (insert "<!DOCTYPE html>\n" (mel (mel-load file)))
+    (write-file (concat (file-name-sans-extension file) ".html") 'confirm)))
 
 (defvar html-tag-help)
 (define-derived-mode mel-mode emacs-lisp-mode "mel-mode"
