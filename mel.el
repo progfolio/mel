@@ -31,9 +31,8 @@
 (require 'dom)
 
 (defgroup mel nil "HTML Elisp Templating." :group 'programming :prefix "mel-")
+(defcustom mel-print-compact nil "When non-nil minimize HTML ouput." :type 'boolean)
 
-(defcustom mel-print-compact nil "When non-nil, print HTML on a single line."
-  :type 'boolean)
 (defvar mel-data nil)
 
 (defun mel--chars-to-string (chars)
