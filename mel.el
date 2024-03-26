@@ -94,6 +94,20 @@ If NOERROR is non-nil, return an empty string when key is not found."
   (org-html-convert-region-to-html)
   (list :raw (buffer-substring-no-properties (point-min) (point-max))))
 
+(defun mel-parser (filename)
+  "Dispatch to parser in `mel-parser-extensions' via FILENAME.
+If no parser matches, `buffer-string' is used."
+  (funcall (alist-get (file-name-extension filename) mel-parser-extensions
+                      #'buffer-string nil (lambda (k v) (string-match-p v k)))))
+
+(defun mel-load (filename &optional parser)
+  "Eval forms in FILENAME via PARSER.
+PARSER defaults to evaluate as elisp and return value of last form."
+  (with-temp-buffer
+    (insert-file-contents filename)
+    (goto-char (point-min))
+    (if parser (funcall parser) (mel-parser filename))))
+
 (defun mel--chars-to-string (chars)
   "Return string from CHARS."
   (cons (car chars) (apply #'string (nreverse (cdr chars)))))
@@ -130,20 +144,6 @@ Common keys have their values appended."
            for key = (symbol-name k)
            collect (cons (if (string-prefix-p ":" key) (intern (substring key 1)) k)
                          (if v (format "%s" v) ""))))
-
-(defun mel-parser (filename)
-  "Dispatch to parser in `mel-parser-extensions' via FILENAME.
-If no parser matches, `buffer-string' is used."
-  (funcall (alist-get (file-name-extension filename) mel-parser-extensions
-                      #'buffer-string nil (lambda (k v) (string-match-p v k)))))
-
-(defun mel-load (filename &optional parser)
-  "Eval forms in FILENAME via PARSER.
-PARSER defaults to evaluate as elisp and return value of last form."
-  (with-temp-buffer
-    (insert-file-contents filename)
-    (goto-char (point-min))
-    (if parser (funcall parser) (mel-parser filename))))
 
 (defun mel-node (spec)
   "Return a list of nodes from mel SPEC."
