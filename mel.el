@@ -198,6 +198,12 @@ Common keys have their values appended."
     (unless mel-print-compact (indent-region (point-min) (point-max)))
     (buffer-substring-no-properties (point-min) (point-max))))
 
+(defun mel-file-p (filename)
+  "Return non-nil if FILENAME has a .mel or .htmel file extension."
+  (when-let (((stringp filename))
+             (ext (file-name-extension filename)))
+    (string-match-p "\\(?:ht\\)?mel\\'" ext)))
+
 (defun mel-write-html (file)
   "Write current mel FILE to HTML."
   (interactive "fmel file:")
