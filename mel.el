@@ -136,6 +136,18 @@ Possible types are tag, id, and class."
                        (setq escaped nil)))
            finally return (nreverse (mapcar #'mel--chars-to-string tokens))))
 
+(defun mel-tag-name (object)
+  "Return tag name portion of OBJECT or nil if OBJECT is not a tag."
+  (and (symbolp object)
+       (intern (replace-regexp-in-string "[.@#].*" "" (symbol-name object)))))
+
+(defun mel-tag-attributes (object)
+  "Return tag attribute portion of OBJECT or nil if OBJECT is not a tag."
+  (when-let (((symbolp object))
+             (name (symbol-name object))
+             ((string-match-p "[#.@]" name)))
+    (intern (replace-regexp-in-string "\\(?:[^z-a]*?\\([#.@][^z-a]*\\)\\)" "\\1" name))))
+
 (defun mel--merge-attributes (a &optional b)
   "Merge attribute alists A and B.
 Common keys have their values appended."
@@ -215,8 +227,24 @@ Common keys have their values appended."
   "Write current mel FILE to HTML."
   (interactive "fmel file:")
   (with-temp-buffer
-    (insert "<!DOCTYPE html>\n" (mel (mel-load file)))
-    (write-file (concat (file-name-sans-extension file) ".html") 'confirm)))
+    (let ((mel-spec-functions mel-spec-functions))
+      (insert "<!DOCTYPE html>\n" (mel (mel-load file)))
+      (write-file (concat (file-name-sans-extension file) ".html") 'confirm))))
+
+(defun mel--custom-tag-function (spec)
+  "Return custom tag function from tag SPEC."
+  `(lambda (spec)
+     (when-let ((tag (car-safe spec))
+                ((eq (mel-tag-name tag) ',(car spec))))
+       (let ((attributes (mel-tag-attributes tag))
+             (body (cdr spec)))
+         `(,(intern (format ,(concat (symbol-name (cadr spec)) "%s") (or attributes "")))
+           ,@(backquote ,(cddr spec)))))))
+
+(defmacro mel-deftag (name spec)
+  "Push tag matching NAME and expanding to SPEC to `mel-spec-functions'."
+  (declare (indent defun))
+  `(push (mel--custom-tag-function ',(cons name spec)) mel-spec-functions))
 
 (defvar html-tag-help)
 (define-derived-mode mel-mode emacs-lisp-mode "mel-mode"
@@ -226,6 +254,8 @@ Common keys have their values appended."
    nil `((,(concat "([[:space:]]*\\("
                    (regexp-opt (mapcar #'car html-tag-help) nil)
                    "\\)[.\\#@[) \t\n\r]")
+          1 font-lock-function-name-face)
+         ("\\(?:mel-deftag[[:space:]]+?\\(\\([[:alnum:]]\\|-\\)+?[ \t\r\n]+?\\)\\)"
           1 font-lock-function-name-face)
          ("\\(\\.[[:alpha:]-]+\\)" 1 font-lock-type-face)
          ("[^,]\\(\\(#\\|@\\)[[:alpha:]-]+\\)" 1 font-lock-keyword-face))))
