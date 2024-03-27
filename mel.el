@@ -34,12 +34,13 @@
 (defcustom mel-print-compact nil "When non-nil minimize HTML ouput." :type 'boolean)
 (defcustom mel-pandoc-executable (executable-find "pandoc")
   "Path to the pandoc executable." :type 'string)
-(defcustom mel-parser-extensions '((".htmel" . mel--template)
-                                   (".mel" . mel--partial)
-                                   (".txt" . buffer-string)
-                                   (".org" . mel--org)
-                                   (".md" . mel--markdown))
-  "When non-nil minimize HTML ouput."
+(defcustom mel-parser-extensions '(("\\.htmel\\'" . mel-template)
+                                   ("\\.mel\\'" . mel-partial)
+                                   ("\\.txt\\'" . buffer-string)
+                                   ("\\.org\\'" . mel--org)
+                                   ("\\.md\\'" . mel-markdown))
+  "List of form ((REGEXP . PARSER)...) to associate file extensions with a parser.
+PARSER is called with no arguments and must return a valid mel spec."
   :type '(repeat (choice (string :tag "file extension") (function :tag "parser"))))
 
 (defvar mel-data nil)
@@ -94,8 +95,8 @@ If NOERROR is non-nil, return an empty string when key is not found."
 (defun mel-parser (filename)
   "Dispatch to parser in `mel-parser-extensions' via FILENAME.
 If no parser matches, `buffer-string' is used."
-  (funcall (alist-get (file-name-extension filename) mel-parser-extensions
-                      #'buffer-string nil (lambda (k v) (string-match-p v k)))))
+  (funcall (alist-get (concat "." (file-name-extension filename)) mel-parser-extensions
+                      #'buffer-string nil (lambda (k v) (string-match-p k v)))))
 
 (defun mel-load (filename &optional parser)
   "Parse FILENAME with PARSER or `mel-parser'."
