@@ -191,8 +191,7 @@ Common keys have their values appended."
 
 (defun mel (&rest specs)
   "Return HTML string from SPECS."
-  (with-current-buffer (get-buffer-create " *mel-html*")
-    (erase-buffer)
+  (with-temp-buffer
     (unless (derived-mode-p 'html-mode) (delay-mode-hooks (html-mode)))
     (mapc #'mel--insert-node (apply #'mel-nodelist specs))
     (unless mel-print-compact (indent-region (point-min) (point-max)))
