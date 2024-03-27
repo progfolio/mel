@@ -1,0 +1,2 @@
+`(p "This paragraph was included from "
+    (code ,(concat "./" (file-name-nondirectory (buffer-file-name)))))
