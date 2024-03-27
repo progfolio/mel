@@ -101,12 +101,12 @@ If no parser matches, `buffer-string' is used."
                       #'buffer-string nil (lambda (k v) (string-match-p v k)))))
 
 (defun mel-load (filename &optional parser)
-  "Eval forms in FILENAME via PARSER.
-PARSER defaults to evaluate as elisp and return value of last form."
-  (with-temp-buffer
-    (insert-file-contents filename)
-    (goto-char (point-min))
-    (if parser (funcall parser) (mel-parser filename))))
+  "Parse FILENAME with PARSER or `mel-parser'."
+  (let ((visited (find-buffer-visiting filename)))
+    (with-current-buffer (or visited (find-file-noselect filename))
+      (unwind-protect
+          (if parser (funcall parser) (mel-parser filename))
+        (unless visited (kill-buffer))))))
 
 (defun mel--chars-to-string (chars)
   "Return string from CHARS."
