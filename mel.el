@@ -50,49 +50,46 @@ If NOERROR is non-nil, return an empty string when key is not found."
   (or (alist-get key mel-data nil)
       (or (and noerror "") (error "No mel-data value for %S" key))))
 
-(defun mel--template ()
+(defun mel-template ()
   "Eval `current-buffer' as elisp. Return value of last expression."
   (eval (read (format "(progn %s)" (buffer-substring-no-properties (point-min) (point-max))))
         t))
 
-(defun mel--partial ()
-  "Parser for file with multiple top-level specs."
+(defun mel-partial ()
+  "Eval `current-buffer' as elisp. Return list of top-level expression values."
   (let ((forms nil))
     (condition-case err
         (while t (push (read (current-buffer)) forms))
       ((end-of-file) nil)
       ((error) (signal (car err) (cdr err))))
-    (mapcar (lambda (form) (eval `(backquote ,form))) (nreverse forms))))
+    (mapcar (lambda (form) (eval form t)) (nreverse forms))))
 
-(defun mel--pandoc (format)
-  "Convert `current-buffer' from FORMAT to HTML via pandoc."
-  (if (zerop (call-process-region (point-min) (point-max) mel-pandoc-executable
-                                  'delete t nil "-f" format))
-      (list :raw (buffer-substring-no-properties (point-min) (point-max)))
-    (error "Unable to parse buffer: %s" (buffer-string))))
+(defun mel-pandoc (format &optional string)
+  "Convert STRING or `buffer-string' from FORMAT to HTML via pandoc."
+  (let ((b (or string (buffer-string))))
+    (with-temp-buffer
+      (insert b)
+      (goto-char (point-min))
+      (if (zerop (call-process-region (point-min) (point-max) mel-pandoc-executable
+                                      'delete t nil "-f" format))
+          (list :raw (buffer-substring-no-properties (point-min) (point-max)))
+        (error "Unable to parse buffer: %s" (buffer-string))))))
 
-(defun mel--markdown ()
-  "Convert `current-buffer' from Markdown to HTML via pandoc."
-  (mel--pandoc "markdown"))
-
-(defun mel-md (&rest strings)
-  "Return HTML from markdown STRINGS."
-  (with-temp-buffer
-    (insert (string-join strings "\n"))
-    (mel--markdown)))
-
-(defun mel--org-pandoc ()
-  "Convert `current-buffer' from Org to HTML via pandoc."
-  (mel--pandoc "markdown"))
+(defun mel-markdown (&rest strings)
+  "Return STRINGS or `buffer-string' converted from Markdown to HTML."
+  (mel-pandoc "Markdown" (string-join strings)))
 
 (declare-function org-html-convert-region-to-html "ox-html")
-(defun mel--org ()
-  "Convert `current-buffer' from Org to HTML."
+(defun mel-org (&rest strings)
+  "Return STRINGS or `buffer-string' converted from Org to HTML."
   (require 'ox-html)
-  (set-mark (point-min))
-  (goto-char (point-max))
-  (org-html-convert-region-to-html)
-  (list :raw (buffer-substring-no-properties (point-min) (point-max))))
+  (let ((s (if strings (string-join strings) (buffer-string))))
+    (with-temp-buffer
+      (insert s)
+      (set-mark (point-min))
+      (goto-char (point-max))
+      (org-html-convert-region-to-html)
+      (list :raw (buffer-substring-no-properties (point-min) (point-max))))))
 
 (defun mel-parser (filename)
   "Dispatch to parser in `mel-parser-extensions' via FILENAME.
