@@ -223,13 +223,19 @@ Common keys have their values appended."
              (ext (file-name-extension filename)))
     (string-match-p "\\(?:ht\\)?mel\\'" ext)))
 
-(defun mel-write-html (file)
-  "Write current mel FILE to HTML."
-  (interactive "fmel file:")
+(defun mel-write-html (source output)
+  "Write mel SOURCE file to HTML OUTPUT."
+  (interactive
+   (let* ((f (buffer-file-name))
+          (source (read-file-name "MEL source file: " nil
+                                  (when (mel-file-p f) f)
+                                  'must-match
+                                  (when (mel-file-p f) f)
+                                  #'mel-file-p)))
+     (list source (concat (file-name-sans-extension source) ".html"))))
   (with-temp-buffer
-    (let ((mel-spec-functions mel-spec-functions))
-      (insert "<!DOCTYPE html>\n" (mel (mel-load file)))
-      (write-file (concat (file-name-sans-extension file) ".html") 'confirm))))
+    (insert "<!DOCTYPE html>\n" (mel (mel-load source)))
+    (write-file output 'confirm)))
 
 (defun mel--custom-tag-function (spec)
   "Return custom tag function from tag SPEC."
