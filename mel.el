@@ -42,6 +42,14 @@
   "List of form ((REGEXP . PARSER)...) to associate file extensions with a parser.
 PARSER is called with no arguments and must return a valid mel spec."
   :type '(repeat (choice (string :tag "file extension") (function :tag "parser"))))
+(defcustom mel-spec-functions nil
+  "List of functions which are called with a spec as their sole argument.
+The first function to return non-nil replaces the spec value."
+  :type 'hook)
+(defcustom mel-node-functions nil
+  "List of functions which are called with a node as their sole argument.
+The first function to return non-nil replaces the node value."
+  :type 'hook)
 
 (defvar mel-data nil)
 
@@ -145,6 +153,8 @@ Common keys have their values appended."
 
 (defun mel-node (spec)
   "Return a list of nodes from mel SPEC."
+  (cl-loop for fn in (ensure-list mel-spec-functions)
+           do (when-let ((val (funcall fn spec))) (setq spec val)))
   (if (stringp spec) (list spec)
     (cl-loop with tokens = (mel--parse-symbol (pop spec))
              with tag = (intern (alist-get 'tag tokens "div"))
@@ -156,11 +166,11 @@ Common keys have their values appended."
                        (condition-case err
                            (mel--merge-attributes (mel--parse-attributes el) tokens)
                          ((duplicate-id) (error "Duplicate ID %s: %s" spec (cdr err)))))
-               (setq rest
-                     (if (consp el) (append (mel-node el) rest)
-                       (cons el rest))))
-             finally return
-             (list `(,tag ,tokens ,@(nreverse rest))))))
+               (setq rest (if (consp el) (append (mel-node el) rest) (cons el rest))))
+             finally return (let ((node  `(,tag ,tokens ,@(nreverse rest))))
+                              (cl-loop for fn in (ensure-list mel-node-functions)
+                                       do (when-let ((val (funcall fn node))) (setq node val)))
+                              (list node)))))
 
 (defun mel-nodelist (&rest specs)
   "Return List of nodes from SPECS."
