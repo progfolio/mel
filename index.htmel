@@ -1,23 +1,51 @@
 ;; -*- lexical-binding: t; -*-
 (require 'mel)
-(add-hook 'after-save-hook
-          (lambda () (let ((name (buffer-file-name)))
-                       (mel-write-html name "index.html")
-                       (with-temp-buffer
-                         (insert-file-contents "./index.html")
-                         (if (zerop (call-process-region (point-min) (point-max) mel-pandoc-executable
-                                                             'delete t nil "-f" "html" "-t" "gfm-raw_html"))
-                             (write-file "README.md")
-                           (error "Unable to parse buffer: %s" (buffer-string))))))
-          nil t)
 
-(mel-deftag md
-  (.md ,(apply #'mel-markdown body)))
+(defun +mel-print-md (node)
+  "Print NODE as markdown."
+  (if (stringp node) node
+    (pcase (car-safe node)
+      ((or 'html 'body) (mapconcat #'+mel-print-md (nthcdr 2 node)))
+      ((or 'p 'md) (concat (mapconcat #'+mel-print-md (nthcdr 2 node) "\n") "\n"))
+      ((and 'div (guard (equal (alist-get 'class (nth 1 node)) "md")))
+       (car (last (car (last (nthcdr 2 node))))))
+      ('img (format "<p align=\"center\">%s</p>\n\n" (let ((mel-print-functions))
+                                                       (with-temp-buffer
+                                                         (dom-print node)
+                                                         (buffer-string)))))
+      ('span (mapconcat #'+mel-print-md (nthcdr 2 node) " "))
+      ('pre (concat "\n```" (car (split-string (alist-get 'class (nth 1 node)) " "))
+                    (format "\n%s\n"
+                            (with-temp-buffer
+                              (insert (mapconcat (lambda (el) (format "%s" el))
+                                                 (nthcdr 2 node) "\n"))
+                              (indent-region (point-min) (point-max))
+                              (buffer-substring-no-properties (point-min) (point-max))))
+                    "```\n"))
+      ('q (concat (mapconcat (lambda (el) (format "> %s" el)) (nthcdr 2 node) "\n") "\n"))
+      ((and heading (pred symbolp)
+            (guard (string-match-p "h[[:digit:]]" (symbol-name heading))))
+       (format "\n%s %s\n\n"
+               (make-string (string-to-number (substring (symbol-name heading) 1)) ?#)
+               (mapconcat #'+mel-print-md (nthcdr 2 node) " ")))
+      (_ ""))))
 
-(mel-deftag example
-  (.example (code ,(format "%S" (macroexp-progn body)))
-            (p "Returns:")
-            (code ,(format "%s" (eval `(progn ,@body) t)))))
+(defun +mel-write-docs ()
+  (let ((name (buffer-file-name))
+        (mel-spec-functions
+         (list (mel-deftag md (.md ,(apply #'mel-markdown body)))
+               (mel-deftag example
+                 (.example (pre.emacs-lisp ,(format "%S" (macroexp-progn body)))
+                           (p "Returns:")
+                           (pre.html ,(format "%s" (eval `(progn ,@body) t))))))))
+    (mel-write-html name "index.html"))
+  (let ((mel-print-functions '(+mel-print-md))
+        (mel-spec-functions '(+mel-example)))
+    (with-temp-buffer
+      (insert (mel (mel-load "index.htmel")))
+      (write-file "README.md"))))
+
+(add-hook 'after-save-hook #'+mel-write-docs nil t)
 
 `( html [:lang "en"]
    (head
@@ -28,12 +56,12 @@
    (body
     (h1 "MEL: Elisp HTML Templating")
     (img.center [ :src "./logo.png"
-                     :alt "A honeycomb with the word 'mel' written in honey in the center."])
+                  :alt "A honeycomb with the word 'mel' written in honey in the center."])
     (q.center "Short and sweet HTML.")
     (h2 "Usage")
     (md "The `mel` function accepts any number of nodes and returns an HTML string."
         "Each node is a list of the following form:")
-    (pre "(TAG [attribute val...] CHILDREN...)")
+    (pre.emacs-lisp "(TAG [attribute val...] CHILDREN...)")
     (h3 "Tags")
     (md "`TAG` must be a symbol staring with the name of an HTML tag.")
     (example (mel '(h1 "heading")))
@@ -60,10 +88,11 @@
     (example (mel '(p "example " (span "text"))))
     (h2 "Tempalte Files")
     (md "An `htmel` file must contain an emacs-lisp program."
-        "When evaluated, the value of the last expression must be a mel spec for an HTML document."
-        "For example, the source for this page is stored in `[./index.htmel](./index.htmel)`.")
-    (md "Content stored in other files can be included via the `mel-load` function.")
+        "When evaluated, the return value of the last expression must be a mel spec for a document."
+        "For example, the source for this page is stored in [./index.htmel](./index.htmel).")
+    (md "A `mel` file is similar to an htmel file, but the return value of each top-level sexp is collected into a list."
+        "This is useful for including partial templates within other templates (see below).")
     (h2 "File Inclusion")
+    (md "Content stored in other files can be included via the `mel-load` function.")
     (md "The `mel-load` function can be used to parse and load files into a template.")
-    (example (mel-load "./include.mel"))
-    ))
+    (example (mel-load "./include.mel"))))

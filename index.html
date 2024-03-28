@@ -15,16 +15,16 @@
       <p>The <code>mel</code> function accepts any number of nodes and returns
         an HTML string.Each node is a list of the following form:</p>
     </div>
-    <pre>(TAG [attribute val...] CHILDREN...)</pre>
+    <pre class="emacs-lisp">(TAG [attribute val...] CHILDREN...)</pre>
     <h3>Tags</h3>
     <div class="md">
       <p><code>TAG</code> must be a symbol staring with the name of an HTML
         tag.</p>
     </div>
     <div class="example">
-      <code>(mel '(h1 &quot;heading&quot;))</code>
+      <pre class="emacs-lisp">(mel '(h1 &quot;heading&quot;))</pre>
       <p>Returns:</p>
-      <code>&lt;h1&gt;heading&lt;/h1&gt;</code>
+      <pre class="html">&lt;h1&gt;heading&lt;/h1&gt;</pre>
     </div>
     <h3>Classes</h3>
     <div class="md">
@@ -32,24 +32,24 @@
         indicate a class.</p>
     </div>
     <div class="example">
-      <code>(mel '(h1.class &quot;heading&quot;))</code>
+      <pre class="emacs-lisp">(mel '(h1.class &quot;heading&quot;))</pre>
       <p>Returns:</p>
-      <code>&lt;h1 class=&quot;class&quot;&gt;heading&lt;/h1&gt;</code>
+      <pre class="html">&lt;h1 class=&quot;class&quot;&gt;heading&lt;/h1&gt;</pre>
     </div>
     <p>It may be used multiple times.</p>
     <div class="example">
-      <code>(mel '(h1.one.two &quot;heading&quot;))</code>
+      <pre class="emacs-lisp">(mel '(h1.one.two &quot;heading&quot;))</pre>
       <p>Returns:</p>
-      <code>&lt;h1 class=&quot;one two&quot;&gt;heading&lt;/h1&gt;</code>
+      <pre class="html">&lt;h1 class=&quot;one two&quot;&gt;heading&lt;/h1&gt;</pre>
     </div>
     <div class="md">
       <p>As a special case, if a tag symbol begins with a <code>.</code>, a
         div tag is implied.</p>
     </div>
     <div class="example">
-      <code>(mel '(\.class &quot;content&quot;))</code>
+      <pre class="emacs-lisp">(mel '(\.class &quot;content&quot;))</pre>
       <p>Returns:</p>
-      <code>&lt;div class=&quot;class&quot;&gt;content&lt;/div&gt;</code>
+      <pre class="html">&lt;div class=&quot;class&quot;&gt;content&lt;/div&gt;</pre>
     </div>
     <h3>IDs</h3>
     <div class="md">
@@ -59,46 +59,51 @@
         does not need to be escaped.</p>
     </div>
     <div class="example">
-      <code>(mel '(h1\#one &quot;heading&quot;) '(h2@two &quot;heading&quot;))</code>
+      <pre class="emacs-lisp">(mel '(h1\#one &quot;heading&quot;) '(h2@two &quot;heading&quot;))</pre>
       <p>Returns:</p>
-      <code>&lt;h1 id=&quot;one&quot;&gt;heading&lt;/h1&gt;&lt;h2 id=&quot;two&quot;&gt;heading&lt;/h2&gt;</code>
+      <pre class="html">&lt;h1 id=&quot;one&quot;&gt;heading&lt;/h1&gt;&lt;h2 id=&quot;two&quot;&gt;heading&lt;/h2&gt;</pre>
     </div>
     <h3>Attributes</h3>
     <p>An optional attribute vector may be added as the second element of a node list.Each attribute must be a symbol (optionally a keyword) followed by its value.The value will be coerced to its string representation.</p>
     <div class="example">
-      <code>(mel '(h1 [:one &quot;true&quot; :two false] &quot;heading&quot;))</code>
+      <pre class="emacs-lisp">(mel '(h1 [:one &quot;true&quot; :two false] &quot;heading&quot;))</pre>
       <p>Returns:</p>
-      <code>&lt;h1 one=&quot;true&quot; two=&quot;false&quot;&gt;heading&lt;/h1&gt;</code>
+      <pre class="html">&lt;h1 one=&quot;true&quot; two=&quot;false&quot;&gt;heading&lt;/h1&gt;</pre>
     </div>
     <h3>Children</h3>
     <p>Any elements of a node specified after the tag and optional attribute vector are the node's children.They may be either strings or nodes.</p>
     <div class="example">
-      <code>(mel '(p &quot;example &quot; (span &quot;text&quot;)))</code>
+      <pre class="emacs-lisp">(mel '(p &quot;example &quot; (span &quot;text&quot;)))</pre>
       <p>Returns:</p>
-      <code>&lt;p&gt;example 
+      <pre class="html">&lt;p&gt;example 
         &lt;span&gt;text&lt;/span&gt;
-        &lt;/p&gt;</code>
+        &lt;/p&gt;</pre>
     </div>
     <h2>Tempalte Files</h2>
     <div class="md">
       <p>An <code>htmel</code> file must contain an emacs-lisp program.When
-        evaluated, the value of the last expression must be a mel spec for an
-        HTML document.For example, the source for this page is stored in
-        <code>[./index.htmel](./index.htmel)</code>.</p>
+        evaluated, the return value of the last expression must be a mel spec
+        for a document.For example, the source for this page is stored in <a
+                                                                            href="./index.htmel">./index.htmel</a>.</p>
     </div>
+    <div class="md">
+      <p>A <code>mel</code> file is similar to an htmel file, but the return
+        value of each top-level sexp is collected into a list.This is useful for
+        including partial templates within other templates (see below).</p>
+    </div>
+    <h2>File Inclusion</h2>
     <div class="md">
       <p>Content stored in other files can be included via the
         <code>mel-load</code> function.</p>
     </div>
-    <h2>File Inclusion</h2>
     <div class="md">
       <p>The <code>mel-load</code> function can be used to parse and load
         files into a template.</p>
     </div>
     <div class="example">
-      <code>(mel-load &quot;./include.mel&quot;)</code>
+      <pre class="emacs-lisp">(mel-load &quot;./include.mel&quot;)</pre>
       <p>Returns:</p>
-      <code>((p This paragraph was included from  (code ./include.mel)))</code>
+      <pre class="html">(`(p This paragraph was included from  (code ,(concat ./ (file-name-nondirectory (buffer-file-name))))))</pre>
     </div>
   </body>
 </html>
