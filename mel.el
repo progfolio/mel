@@ -44,11 +44,12 @@ PARSER is called with no arguments and must return a valid mel spec."
   :type '(repeat (choice (string :tag "file extension") (function :tag "parser"))))
 (defcustom mel-spec-functions nil
   "List of functions which are called with a spec as their sole argument.
-The first function to return non-nil replaces the spec value."
+Functions which return non-nil replaces the spec value."
   :type 'hook)
 (defcustom mel-node-functions nil
   "List of functions which are called with a node as their sole argument.
-The first function to return non-nil replaces the node value."
+Functions which return non-nil replaces the node value."
+  :type 'hook)
   :type 'hook)
 
 (defvar mel-data nil)
