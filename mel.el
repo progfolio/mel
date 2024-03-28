@@ -50,6 +50,9 @@ Functions which return non-nil replaces the spec value."
   "List of functions which are called with a node as their sole argument.
 Functions which return non-nil replaces the node value."
   :type 'hook)
+(defcustom mel-print-functions nil
+  "List of functions which are called with a node as their sole argument.
+The first function to return non-nil replaces the node's print value."
   :type 'hook)
 
 (defvar mel-data nil)
@@ -193,16 +196,19 @@ Common keys have their values appended."
   "Advice for `dom-print' FN to handle ARGS."
   (let* ((node (car args))
          (tag (car-safe node)))
-    (cond ((stringp node) (insert (url-insert-entities-in-string node)))
-          ((eq tag :raw) (apply #'insert (nthcdr 2 node)))
-          ((eq tag :comment)
-           (insert (with-current-buffer (get-buffer-create " *mel-comment*")
-                     (erase-buffer)
-                     (unless (derived-mode-p 'html-mode) (delay-mode-hooks (html-mode)))
-                     (apply #'insert (nthcdr 2 node))
-                     (comment-region (point-min) (point-max))
-                     (buffer-substring-no-properties (point-min) (point-max)))))
-          (t (funcall fn node (not mel-print-compact))))))
+    (if-let ((custom (cl-loop for fn in (ensure-list mel-print-functions)
+                              thereis (funcall fn node))))
+        (insert custom)
+      (cond ((stringp node) (insert (url-insert-entities-in-string node)))
+            ((eq tag :raw) (apply #'insert (nthcdr 2 node)))
+            ((eq tag :comment)
+             (insert (with-current-buffer (get-buffer-create " *mel-comment*")
+                       (erase-buffer)
+                       (unless (derived-mode-p 'html-mode) (delay-mode-hooks (html-mode)))
+                       (apply #'insert (nthcdr 2 node))
+                       (comment-region (point-min) (point-max))
+                       (buffer-substring-no-properties (point-min) (point-max)))))
+            (t (funcall fn node (not mel-print-compact)))))))
 
 (defun mel--insert-node (node)
   "Insert NODE."
