@@ -94,14 +94,14 @@
     <h2>File Inclusion</h2>
     <div class="md">
       <p>Content stored in other files can be included via the
-        <code>mel-load</code> function.</p>
+        <code>mel-read</code> function.</p>
     </div>
     <div class="md">
-      <p>The <code>mel-load</code> function can be used to parse and load
+      <p>The <code>mel-read</code> function can be used to parse and load
         files into a template.</p>
     </div>
     <div class="example">
-      <pre class="emacs-lisp">(mel-load &quot;./include.mel&quot;)</pre>
+      <pre class="emacs-lisp">(mel-read &quot;./include.mel&quot;)</pre>
       <p>Returns:</p>
       <pre class="html">(`(p This paragraph was included from  (code ,(concat ./ (file-name-nondirectory (buffer-file-name))))))</pre>
     </div>

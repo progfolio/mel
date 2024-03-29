@@ -60,7 +60,7 @@
   (interactive)
   (with-current-buffer (get-buffer-create "output.html")
     (erase-buffer)
-    (let ((dom (mel-load "/tmp/test.mel" t)))
+    (let ((dom (mel-read "/tmp/test.mel" t)))
       (insert (apply #'mel dom))
       (pop-to-buffer (current-buffer)))))
 

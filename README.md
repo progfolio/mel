@@ -51,5 +51,5 @@ This is useful for including partial templates within other templates (see below
 
 ## File Inclusion
 
-Content stored in other files can be included via the `mel-load` function.
-The `mel-load` function can be used to parse and load files into a template.
+Content stored in other files can be included via the `mel-read` function.
+The `mel-read` function can be used to parse and load files into a template.

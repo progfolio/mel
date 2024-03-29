@@ -42,7 +42,7 @@
   (let ((mel-print-functions '(+mel-print-md))
         (mel-spec-functions '(+mel-example)))
     (with-temp-buffer
-      (insert (mel (mel-load "index.htmel")))
+      (insert (mel (mel-read "index.htmel")))
       (write-file "README.md"))))
 
 (add-hook 'after-save-hook #'+mel-write-docs nil t)
@@ -93,6 +93,6 @@
     (md "A `mel` file is similar to an htmel file, but the return value of each top-level sexp is collected into a list."
         "This is useful for including partial templates within other templates (see below).")
     (h2 "File Inclusion")
-    (md "Content stored in other files can be included via the `mel-load` function.")
-    (md "The `mel-load` function can be used to parse and load files into a template.")
-    (example (mel-load "./include.mel"))))
+    (md "Content stored in other files can be included via the `mel-read` function.")
+    (md "The `mel-read` function can be used to parse and load files into a template.")
+    (example (mel-read "./include.mel"))))

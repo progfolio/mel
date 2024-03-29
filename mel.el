@@ -34,14 +34,14 @@
 (defcustom mel-print-compact nil "When non-nil minimize HTML ouput." :type 'boolean)
 (defcustom mel-pandoc-executable (executable-find "pandoc")
   "Path to the pandoc executable." :type 'string)
-(defcustom mel-parser-extensions '(("\\.htmel\\'" . mel-template)
+(defcustom mel-reader-extensions '(("\\.htmel\\'" . mel-template)
                                    ("\\.mel\\'" . mel-partial)
                                    ("\\.txt\\'" . buffer-string)
                                    ("\\.org\\'" . mel--org)
                                    ("\\.md\\'" . mel-markdown))
-  "List of form ((REGEXP . PARSER)...) to associate file extensions with a parser.
+  "List of form ((REGEXP . PARSER)...) to associate file extensions with a reader.
 PARSER is called with no arguments and must return a valid mel spec."
-  :type '(repeat (choice (string :tag "file extension") (function :tag "parser"))))
+  :type '(repeat (choice (string :tag "file extension") (function :tag "reader"))))
 (defcustom mel-spec-functions nil
   "List of functions which are called with a spec as their sole argument.
 Functions which return non-nil replaces the spec value."
@@ -104,18 +104,18 @@ If NOERROR is non-nil, return an empty string when key is not found."
       (org-html-convert-region-to-html)
       (list :raw (buffer-substring-no-properties (point-min) (point-max))))))
 
-(defun mel-parser (filename)
-  "Dispatch to parser in `mel-parser-extensions' via FILENAME.
-If no parser matches, `buffer-string' is used."
-  (funcall (alist-get (concat "." (file-name-extension filename)) mel-parser-extensions
+(defun mel-reader (filename)
+  "Dispatch to reader in `mel-reader-extensions' via FILENAME.
+If no reader matches, `buffer-string' is used."
+  (funcall (alist-get (concat "." (file-name-extension filename)) mel-reader-extensions
                       #'buffer-string nil (lambda (k v) (string-match-p k v)))))
 
-(defun mel-load (filename &optional parser)
-  "Parse FILENAME with PARSER or `mel-parser'."
+(defun mel-read (filename &optional reader)
+  "Read FILENAME with READER or `mel-reader'."
   (let ((visited (find-buffer-visiting filename)))
     (with-current-buffer (or visited (find-file-noselect filename))
       (unwind-protect
-          (if parser (funcall parser) (mel-parser filename))
+          (if reader (funcall reader) (mel-reader filename))
         (unless visited (kill-buffer))))))
 
 (defun mel--chars-to-string (chars)
@@ -241,7 +241,7 @@ Common keys have their values appended."
                                   #'mel-file-p)))
      (list source (concat (file-name-sans-extension source) ".html"))))
   (with-temp-buffer
-    (insert "<!DOCTYPE html>\n" (mel (mel-load source)))
+    (insert "<!DOCTYPE html>\n" (mel (mel-read source)))
     (write-file output 'confirm)))
 
 (defun mel--custom-tag-function (spec)
