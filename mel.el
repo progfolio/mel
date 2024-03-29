@@ -255,9 +255,9 @@ Common keys have their values appended."
            ,@(backquote ,(cddr spec)))))))
 
 (defmacro mel-deftag (name spec)
-  "Push tag matching NAME and expanding to SPEC to `mel-spec-functions'."
-  (declare (indent defun))
-  `(push (mel--custom-tag-function ',(cons name spec)) mel-spec-functions))
+  "Define function for tag with NAME which expands to SPEC."
+  `(defalias ',(intern (format "+mel-%s" name))
+    (function ,(mel--custom-tag-function (cons name spec)))))
 
 (defvar html-tag-help)
 (define-derived-mode mel-mode emacs-lisp-mode "mel-mode"
