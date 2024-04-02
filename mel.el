@@ -69,13 +69,15 @@ If NOERROR is non-nil, return an empty string when key is not found."
         t))
 
 (defun mel-partial ()
-  "Eval `current-buffer' as elisp. Return list of top-level expression values."
+  "Eval `current-buffer' as elisp. Return list of non-nil top-level expression values."
   (let ((forms nil))
-    (condition-case err
-        (while t (push (read (current-buffer)) forms))
-      ((end-of-file) nil)
-      ((error) (signal (car err) (cdr err))))
-    (mapcar (lambda (form) (eval form t)) (nreverse forms))))
+    (save-excursion
+      (goto-char (point-min))
+      (condition-case err
+          (while t (push (read (current-buffer)) forms))
+        ((end-of-file) nil)
+        ((error) (signal (car err) (cdr err))))
+      (delq nil (mapcar (lambda (form) (eval form t)) (nreverse forms))))))
 
 (defun mel-pandoc (format &optional string)
   "Convert STRING or `buffer-string' from FORMAT to HTML via pandoc."
