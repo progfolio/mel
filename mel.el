@@ -34,11 +34,11 @@
 (defcustom mel-print-compact nil "When non-nil minimize HTML ouput." :type 'boolean)
 (defcustom mel-pandoc-executable (executable-find "pandoc")
   "Path to the pandoc executable." :type 'string)
-(defcustom mel-reader-extensions '(("\\.htmel\\'" . mel-template)
-                                   ("\\.mel\\'" . mel-partial)
-                                   ("\\.txt\\'" . buffer-string)
-                                   ("\\.org\\'" . mel--org)
-                                   ("\\.md\\'" . mel-markdown))
+(defcustom mel-default-reader #'buffer-string "Default file reader." :type 'function)
+(defcustom mel-readers '(("\\.htmel\\'" . mel-template)
+                         ("\\.mel\\'" . mel-partial)
+                         ("\\.org\\'" . mel-org)
+                         ("\\.md\\'" . mel-markdown))
   "List of form ((REGEXP . PARSER)...) to associate file extensions with a reader.
 PARSER is called with no arguments and must return a valid mel spec."
   :type '(repeat (choice (string :tag "file extension") (function :tag "reader"))))
@@ -107,10 +107,10 @@ If NOERROR is non-nil, return an empty string when key is not found."
       (list :raw (buffer-substring-no-properties (point-min) (point-max))))))
 
 (defun mel-reader (filename)
-  "Dispatch to reader in `mel-reader-extensions' via FILENAME.
-If no reader matches, `buffer-string' is used."
-  (funcall (alist-get (concat "." (file-name-extension filename)) mel-reader-extensions
-                      #'buffer-string nil (lambda (k v) (string-match-p k v)))))
+  "Call reader matching FILENAME in `mel-readers'.
+If no reader matches, `mel-default-reader' is used."
+  (funcall (alist-get filename mel-readers mel-default-reader nil
+                      (lambda (k v) (string-match-p k v)))))
 
 (defun mel-read (filename &optional reader)
   "Read FILENAME with READER or `mel-reader'."
