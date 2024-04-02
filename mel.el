@@ -173,7 +173,7 @@ Common keys have their values appended."
   "Return a list of nodes from mel SPEC."
   (cl-loop for fn in (ensure-list mel-spec-functions)
            do (when-let ((val (funcall fn spec))) (setq spec val)))
-  (if (stringp spec) (list spec)
+  (if (atom spec) (list (format "%s" spec))
     (cl-loop with tokens = (mel--parse-symbol (pop spec))
              with tag = (intern (alist-get 'tag tokens "div"))
              with rest = nil
