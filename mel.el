@@ -223,7 +223,9 @@ Common keys have their values appended."
   (with-temp-buffer
     (unless (derived-mode-p 'html-mode) (delay-mode-hooks (html-mode)))
     (mapc #'mel--insert-node (apply #'mel-nodelist specs))
-    (unless mel-print-compact (indent-region (point-min) (point-max)))
+    (unless mel-print-compact
+      (let ((inhibit-message t))
+        (indent-region (point-min) (point-max))))
     (buffer-substring-no-properties (point-min) (point-max))))
 
 (defun mel-file-p (filename)
