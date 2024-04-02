@@ -259,7 +259,7 @@ Common keys have their values appended."
 (defmacro mel-deftag (name spec)
   "Define function for tag with NAME which expands to SPEC."
   `(defalias ',(intern (format "+mel-%s" name))
-    (function ,(mel--custom-tag-function (cons name spec)))))
+     (function ,(mel--custom-tag-function (cons name spec)))))
 
 (defvar html-tag-help)
 (define-derived-mode mel-mode emacs-lisp-mode "mel-mode"
