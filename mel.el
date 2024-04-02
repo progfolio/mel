@@ -92,7 +92,7 @@ If NOERROR is non-nil, return an empty string when key is not found."
 
 (defun mel-markdown (&rest strings)
   "Return STRINGS or `buffer-string' converted from Markdown to HTML."
-  (mel-pandoc "Markdown" (string-join strings)))
+  (mel-pandoc "Markdown" (when strings (string-join strings))))
 
 (declare-function org-html-convert-region-to-html "ox-html")
 (defun mel-org (&rest strings)
