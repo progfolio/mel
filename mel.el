@@ -69,7 +69,7 @@ If NOERROR is non-nil, return an empty string when key is not found."
         t))
 
 (defun mel-partial ()
-  "Eval `current-buffer' as elisp. Return list of non-nil top-level expression values."
+  "Eval `current-buffer'; Return list of non-nil top-level expression values."
   (let ((forms nil))
     (save-excursion
       (goto-char (point-min))
