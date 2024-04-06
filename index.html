@@ -12,10 +12,10 @@
     <q class="center">Short and sweet HTML.</q>
     <h2>Usage</h2>
     <div class="md">
-      <p>The <code>mel</code> function accepts any number of nodes and returns
-        an HTML string.Each node is a list of the following form:</p>
+      <p>The <code>mel</code> function accepts any number of specs and returns
+        a document string.Each spec is a list of the following form:</p>
     </div>
-    <pre class="emacs-lisp">(TAG [attribute val...] CHILDREN...)</pre>
+    <pre class="emacs-lisp">(TAG [attribute val...] CHILDREN...) | STRING</pre>
     <h3>Tags</h3>
     <div class="md">
       <p><code>TAG</code> must be a symbol staring with the name of an HTML

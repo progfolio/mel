@@ -59,9 +59,9 @@
                   :alt "A honeycomb with the word 'mel' written in honey in the center."])
     (q.center "Short and sweet HTML.")
     (h2 "Usage")
-    (md "The `mel` function accepts any number of nodes and returns an HTML string."
-        "Each node is a list of the following form:")
-    (pre.emacs-lisp "(TAG [attribute val...] CHILDREN...)")
+    (md "The `mel` function accepts any number of specs and returns a document string."
+        "Each spec is a list of the following form:")
+    (pre.emacs-lisp "(TAG [attribute val...] CHILDREN...) | STRING")
     (h3 "Tags")
     (md "`TAG` must be a symbol staring with the name of an HTML tag.")
     (example (mel '(h1 "heading")))

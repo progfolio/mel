@@ -7,11 +7,11 @@
 
 ## Usage
 
-The `mel` function accepts any number of nodes and returns an HTML string.
-Each node is a list of the following form:
+The `mel` function accepts any number of specs and returns a document string.
+Each spec is a list of the following form:
 
 ```emacs-lisp
-(TAG [attribute val...] CHILDREN...)
+(TAG [attribute val...] CHILDREN...) | STRING
 ```
 
 ### Tags

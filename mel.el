@@ -79,20 +79,42 @@ If NOERROR is non-nil, return an empty string when key is not found."
         ((error) (signal (car err) (cdr err))))
       (delq nil (mapcar (lambda (form) (eval form t)) (nreverse forms))))))
 
+(defvar mel-frontmatter nil)
 (defun mel-pandoc (format &optional string)
   "Convert STRING or `buffer-string' from FORMAT to HTML via pandoc."
-  (let ((b (or string (buffer-string))))
+  (let ((b (string-trim (or string (buffer-string)))))
     (with-temp-buffer
       (insert b)
       (goto-char (point-min))
-      (if (zerop (call-process-region (point-min) (point-max) mel-pandoc-executable
+      (if (zerop (call-process-region (point) (point-max) mel-pandoc-executable
                                       'delete t nil "-f" format))
           (list :raw (buffer-substring-no-properties (point-min) (point-max)))
         (error "Unable to parse buffer: %s" (buffer-string))))))
 
 (defun mel-markdown (&rest strings)
   "Return STRINGS or `buffer-string' converted from Markdown to HTML."
-  (mel-pandoc "Markdown" (when strings (string-join strings))))
+  (save-excursion
+    (goto-char (point-min))
+    (let ((frontmatterp (and (string-prefix-p "---" (and (not strings) (buffer-string)))
+                             (save-excursion
+                               (forward-line)
+                               (re-search-forward "^--- *" nil 'noerror)))))
+      (when-let (((and mel-frontmatter frontmatterp (not strings)))
+                 (name (or (buffer-file-name) (buffer-name))))
+        (forward-line)
+        (save-restriction
+          (narrow-to-region (point) frontmatterp)
+          (let ((data nil))
+            (while (not (eobp))
+              (when-let ((end (line-end-position))
+                         (separator (re-search-forward ":" end 'noerror)))
+                (push (cons (intern (buffer-substring-no-properties (line-beginning-position) (1- separator)))
+                            (read (buffer-substring-no-properties (1+ separator) end)))
+                      data))
+              (forward-line))
+            (setf (alist-get name mel-data) data))))
+      (mel-pandoc "Markdown" (if strings (string-join strings)
+                               (buffer-substring-no-properties (or frontmatterp (point-min)) (point-max)))))))
 
 (declare-function org-html-convert-region-to-html "ox-html")
 (defun mel-org (&rest strings)
@@ -173,22 +195,24 @@ Common keys have their values appended."
   "Return a list of nodes from mel SPEC."
   (cl-loop for fn in (ensure-list mel-spec-functions)
            do (when-let ((val (funcall fn spec))) (setq spec val)))
-  (if (atom spec) (list (format "%s" spec))
-    (cl-loop with tokens = (mel--parse-symbol (pop spec))
-             with tag = (intern (alist-get 'tag tokens "div"))
-             with rest = nil
-             initially (setf (alist-get 'tag tokens nil t) nil)
-             for el in spec collect
-             (if (vectorp el)
-                 (setq tokens
-                       (condition-case err
-                           (mel--merge-attributes (mel--parse-attributes el) tokens)
-                         ((duplicate-id) (error "Duplicate ID %s: %s" spec (cdr err)))))
-               (setq rest (if (consp el) (append (mel-node el) rest) (cons el rest))))
-             finally return (let ((node  `(,tag ,tokens ,@(nreverse rest))))
-                              (cl-loop for fn in (ensure-list mel-node-functions)
-                                       do (when-let ((val (funcall fn node))) (setq node val)))
-                              (list node)))))
+  (cond ((atom spec) (list (format "%s" spec)))
+        ((eq (car-safe spec) '\,) (list (eval (cadr spec) t)))
+        ((eq (car-safe spec) '\,@) (reverse (eval (cdr spec) t)))
+        (t (cl-loop with tokens = (mel--parse-symbol (pop spec))
+                    with tag = (intern (alist-get 'tag tokens "div"))
+                    with rest = nil
+                    initially (setf (alist-get 'tag tokens nil t) nil)
+                    for el in spec collect
+                    (if (vectorp el)
+                        (setq tokens
+                              (condition-case err
+                                  (mel--merge-attributes (mel--parse-attributes el) tokens)
+                                ((duplicate-id) (error "Duplicate ID %s: %s" spec (cdr err)))))
+                      (setq rest (if (consp el) (append (mel-node el) rest) (cons el rest))))
+                    finally return (let ((node  `(,tag ,tokens ,@(nreverse rest))))
+                                     (cl-loop for fn in (ensure-list mel-node-functions)
+                                              do (when-let ((val (funcall fn node))) (setq node val)))
+                                     (list node))))))
 
 (defun mel-nodelist (&rest specs)
   "Return List of nodes from SPECS."
