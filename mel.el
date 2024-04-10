@@ -63,6 +63,10 @@ If STRICT is non-nil, error when key is not found."
   (or (alist-get key mel-data)
       (when strict (error "No mel-data value for %S" key))))
 
+(defun mel-set (key &optional value)
+  "Set KEY to VALUE on `mel-data'."
+  (setf (alist-get key mel-data) value))
+
 (defun mel-template ()
   "Eval `current-buffer' as elisp. Return value of last expression."
   (eval (read (format "(progn %s)" (buffer-substring-no-properties (point-min) (point-max))))
