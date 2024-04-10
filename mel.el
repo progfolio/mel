@@ -57,11 +57,11 @@ The first function to return non-nil replaces the node's print value."
 
 (defvar mel-data nil)
 
-(defun mel-get (key &optional noerror)
+(defun mel-get (key &optional strict)
   "Return KEY's `mel-data' value.
-If NOERROR is non-nil, return an empty string when key is not found."
+If STRICT is non-nil, error when key is not found."
   (or (alist-get key mel-data)
-      (unless noerror (error "No mel-data value for %S" key))))
+      (when strict (error "No mel-data value for %S" key))))
 
 (defun mel-template ()
   "Eval `current-buffer' as elisp. Return value of last expression."
