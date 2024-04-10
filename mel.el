@@ -109,6 +109,7 @@ If NOERROR is non-nil, return an empty string when key is not found."
 (defun mel-reader (filename)
   "Call reader matching FILENAME in `mel-readers'.
 If no reader matches, `mel-default-reader' is used."
+  (unless (file-exists-p filename) (error "File does not exist: %s" filename))
   (funcall (alist-get filename mel-readers mel-default-reader nil
                       (lambda (k v) (string-match-p k v)))))
 
