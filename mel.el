@@ -113,6 +113,7 @@ If no reader matches, `mel-default-reader' is used."
   (funcall (alist-get filename mel-readers mel-default-reader nil
                       (lambda (k v) (string-match-p k v)))))
 
+;;@TODO: should be determined by predicates
 (defun mel-read (filename &optional reader)
   "Read FILENAME with READER or `mel-reader'."
   (let ((visited (find-buffer-visiting filename)))
