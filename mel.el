@@ -175,26 +175,41 @@ Common keys have their values appended."
            collect (cons (if (string-prefix-p ":" key) (intern (substring key 1)) k)
                          (if v (format "%s" v) ""))))
 
+(defvar mel-path nil)
 (defun mel-node (spec)
   "Return a list of nodes from mel SPEC."
-  (cl-loop for fn in (ensure-list mel-spec-functions)
-           do (when-let ((val (funcall fn spec))) (setq spec val)))
-  (if (atom spec) (list (format "%s" spec))
-    (cl-loop with tokens = (mel--parse-symbol (pop spec))
-             with tag = (intern (alist-get 'tag tokens "div"))
-             with rest = nil
-             initially (setf (alist-get 'tag tokens nil t) nil)
-             for el in spec collect
-             (if (vectorp el)
-                 (setq tokens
-                       (condition-case err
-                           (mel--merge-attributes (mel--parse-attributes el) tokens)
-                         ((duplicate-id) (error "Duplicate ID %s: %s" spec (cdr err)))))
-               (setq rest (if (consp el) (append (mel-node el) rest) (cons el rest))))
-             finally return (let ((node  `(,tag ,tokens ,@(nreverse rest))))
-                              (cl-loop for fn in (ensure-list mel-node-functions)
-                                       do (when-let ((val (funcall fn node))) (setq node val)))
-                              (list node)))))
+  (let ((mel-path mel-path))
+    (mel-set 'path mel-path)
+    (cl-loop for fn in (ensure-list mel-spec-functions)
+             do (when-let ((val (funcall fn spec))) (setq spec val)))
+    (if (atom spec) (list (format "%s" spec))
+      (cl-loop
+       with tokens = (mel--parse-symbol (pop spec))
+       with tag = (intern (alist-get 'tag tokens "div"))
+       with rest = nil
+       initially (setf (alist-get 'tag tokens nil t) nil)
+       (push tag mel-path)
+       for el in spec collect
+       (if (vectorp el)
+           (setq tokens
+                 (condition-case err
+                     (mel--merge-attributes (mel--parse-attributes el) tokens)
+                   ((duplicate-id) (error "Duplicate ID %s: %s" spec (cdr err)))))
+         (setq rest
+               (if (consp el)
+                   (append (cond ((eq (car-safe el) '\`)
+                                  (mel-node (eval el `((self . ,(cadr el))))))
+                                 ((eq (car-safe el) '\,)
+                                  (mel-node (eval (cadr el) `((self . ,(cadr el))))))
+                                 ((eq (car-safe el) '\,@)
+                                  (reverse (apply #'mel-nodelist (eval (cadr el) `((self . ,(cadr el)))))))
+                                 (t (mel-node el)))
+                           rest)
+                 (cons el rest))))
+       finally return (let ((node  `(,tag ,tokens ,@(nreverse rest))))
+                        (cl-loop for fn in (ensure-list mel-node-functions)
+                                 do (when-let ((val (funcall fn node))) (setq node val)))
+                        (list node))))))
 
 (defun mel-nodelist (&rest specs)
   "Return List of nodes from SPECS."
