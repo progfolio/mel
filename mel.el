@@ -1,6 +1,6 @@
 ;;; mel.el --- HTML Elisp Templating               -*- lexical-binding: t; -*-
 
-;; Copyright (C) 2024  Nicholas Vollmer
+;; Copyright (C) 2024-2025  Nicholas Vollmer
 
 ;; Author: Nicholas Vollmer <nv@parenthetic.dev>
 ;; URL: https://github.com/progfolio/mel
